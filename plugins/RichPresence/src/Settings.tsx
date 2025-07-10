@@ -15,14 +15,16 @@ const storage = plugin.storage as typeof plugin.storage & {
 };
 
 function UpdateButton() {
-    async function onPressCallback() {
+    const onPressCallback = async () => {
         RPInstance.onUnload();
         RPInstance.onLoad();
-    }
+    };
 
-    return <TouchableOpacity onPress={onPressCallback}>
-        <FormText style={{ marginRight: 12 }}>UPDATE</FormText>
-    </TouchableOpacity>;
+    return (
+        <TouchableOpacity onPress={onPressCallback}>
+            <FormText style={{ marginRight: 12 }}>UPDATE</FormText>
+        </TouchableOpacity>
+    );
 }
 
 export default function Settings() {
@@ -30,11 +32,11 @@ export default function Settings() {
 
     useEffect(() => {
         navigation.setOptions({
-            headerRight: UpdateButton
+            headerRight: () => <UpdateButton />
         });
     }, []);
 
     return (
         <ConfigEditor selection={storage.selected} />
     );
-}
+}.
