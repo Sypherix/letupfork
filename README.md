@@ -9,4 +9,4 @@ Currently available plugins:
 # How to install?
 Paste a plugin URL into the Plugins page of Vendetta, following a basic format of:
 
-`https://syphetix.github.io/letupfork/PLUGIN_NAME`
+`https://sypherix.github.io/letupfork/PLUGIN_NAME`
