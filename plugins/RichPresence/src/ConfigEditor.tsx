@@ -1,4 +1,3 @@
-
 import { findByProps, findByStoreName } from "@vendetta/metro";
 import { React, stylesheet } from "@vendetta/metro/common";
 import { storage } from "@vendetta/plugin";
@@ -7,6 +6,8 @@ import { semanticColors } from "@vendetta/ui";
 import { Button, Forms } from "@vendetta/ui/components";
 
 import { ScrollView } from "react-native";
+
+import { sendRequest } from "./index";
 
 const { FormSection, FormInput, FormRow, FormSwitch, FormText } = Forms;
 
@@ -26,7 +27,27 @@ const styles = stylesheet.createThemedStyleSheet({
 });
 
 export default function ConfigEditor({ selection }: { selection: string }) {
-    const settings = useProxy(storage.selections[selection]) as Activity;
+    const storedSettings = useProxy(storage.selections[selection]) as Activity;
+    // Keep a local copy for editing before saving
+    const [localSettings, setLocalSettings] = React.useState({ ...storedSettings });
+
+    // Update local copy on input change
+    const updateField = (path: string[], value: any) => {
+        const updated = { ...localSettings };
+        let ref = updated;
+        for (let i = 0; i < path.length - 1; i++) {
+            ref[path[i]] ??= {};
+            ref = ref[path[i]];
+        }
+        ref[path[path.length - 1]] = value;
+        setLocalSettings(updated);
+    };
+
+    // Save localSettings to storage and send presence
+    const onUpdatePressed = () => {
+        storage.selections[selection] = localSettings;
+        sendRequest(localSettings);
+    };
 
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 38 }}>
@@ -40,66 +61,76 @@ export default function ConfigEditor({ selection }: { selection: string }) {
                 }}
                 text="Preview your profile"
             />
+
+            <Button
+                style={{ marginHorizontal: 16, marginBottom: 8 }}
+                color={"secondary"}
+                size={Button.Sizes.MEDIUM}
+                look={Button.Looks.FILLED}
+                onPress={onUpdatePressed}
+                text="UPDATE"
+            />
+
             <FormSection title="Basic" titleStyleType="no_border">
                 <FormInput required autoFocus
                     title="Application Name"
-                    value={settings.name}
+                    value={localSettings.name}
                     placeholder="Discord"
-                    onChange={v => settings.name = v}
+                    onChange={v => updateField(["name"], v)}
                 />
                 <FormInput required
                     title="Application ID"
-                    value={settings.application_id}
+                    value={localSettings.application_id}
                     placeholder="1054951789318909972"
-                    onChange={v => settings.application_id = v}
+                    onChange={v => updateField(["application_id"], v)}
                     keyboardType="numeric"
                 />
                 <FormInput
                     title="Type"
-                    value={settings.type}
+                    value={localSettings.type}
                     placeholder="0"
-                    onChange={v => settings.type = v}
+                    onChange={v => updateField(["type"], v)}
                     keyboardType="numeric"
                 />
                 <FormInput
                     title="Details"
-                    value={settings.details}
+                    value={localSettings.details}
                     placeholder="Competitive"
-                    onChange={v => settings.details = v}
+                    onChange={v => updateField(["details"], v)}
                 />
                 <FormInput
                     title="State"
-                    value={settings.state}
+                    value={localSettings.state}
                     placeholder="Playing Solo"
-                    onChange={v => settings.state = v}
+                    onChange={v => updateField(["state"], v)}
                 />
             </FormSection>
             <FormSection title="Images">
                 <FormInput
                     title="Large Image Asset Key or URL"
-                    value={settings.assets.large_image}
+                    value={localSettings.assets.large_image}
                     placeholder="large_image_here"
-                    onChange={v => settings.assets.large_image = v}
+                    onChange={v => updateField(["assets", "large_image"], v)}
                 />
                 <FormInput
                     title="Large Image Text"
-                    value={settings.assets.large_text}
+                    value={localSettings.assets.large_text}
                     placeholder="Playing on Joe's lobby"
-                    disabled={!settings.assets.large_image}
-                    onChange={v => settings.assets.large_text = v}
+                    disabled={!localSettings.assets.large_image}
+                    onChange={v => updateField(["assets", "large_text"], v)}
                 />
                 <FormInput
                     title="Small Image Asset Key or URL"
-                    value={settings.assets.small_image}
+                    value={localSettings.assets.small_image}
                     placeholder="small_image_here"
-                    onChange={v => settings.assets.small_image = v}
+                    onChange={v => updateField(["assets", "small_image"], v)}
                 />
                 <FormInput
                     title="Small Image Text"
-                    value={settings.assets.small_text}
+                    value={localSettings.assets.small_text}
                     placeholder="Solo"
-                    disabled={!settings.assets.small_image}
-                    onChange={v => settings.assets.small_text = v}
+                    disabled={!localSettings.assets.small_image}
+                    onChange={v => updateField(["assets", "small_text"], v)}
                 />
             </FormSection>
             <FormText style={styles.subText}>
@@ -110,31 +141,31 @@ export default function ConfigEditor({ selection }: { selection: string }) {
                     label="Enable timestamps"
                     subLabel="Set whether to show timestamps or not"
                     trailing={<FormSwitch
-                        value={settings.timestamps._enabled}
-                        onValueChange={v => settings.timestamps._enabled = v}
+                        value={localSettings.timestamps._enabled}
+                        onValueChange={v => updateField(["timestamps", "_enabled"], v)}
                     />}
                 />
                 <FormInput
                     title="Start Timestamp (milliseconds)"
-                    value={settings.timestamps.start}
+                    value={localSettings.timestamps.start}
                     placeholder="1234567890"
-                    disabled={!settings.timestamps._enabled}
-                    onChange={v => settings.timestamps.start = v}
+                    disabled={!localSettings.timestamps._enabled}
+                    onChange={v => updateField(["timestamps", "start"], v)}
                     keyboardType="numeric"
                 />
                 <FormInput
                     title="End Timestamp (milliseconds)"
-                    value={settings.timestamps.end}
+                    value={localSettings.timestamps.end}
                     placeholder="1234567890"
-                    disabled={!settings.timestamps._enabled}
-                    onChange={v => settings.timestamps.end = v}
+                    disabled={!localSettings.timestamps._enabled}
+                    onChange={v => updateField(["timestamps", "end"], v)}
                     keyboardType="numeric"
                 />
                 <FormRow
                     label="Use current time as start timestamp"
                     subLabel="This will override the start timestamp you set above"
-                    disabled={!settings.timestamps._enabled}
-                    onPress={() => settings.timestamps.start = String(Date.now())}
+                    disabled={!localSettings.timestamps._enabled}
+                    onPress={() => updateField(["timestamps", "start"], String(Date.now()))}
                     trailing={FormRow.Arrow}
                 />
             </FormSection>
@@ -144,31 +175,31 @@ export default function ConfigEditor({ selection }: { selection: string }) {
             <FormSection title="Buttons">
                 <FormInput
                     title="First Button Text"
-                    value={settings.buttons[0].label}
+                    value={localSettings.buttons[0].label}
                     placeholder="random link #1"
-                    onChange={v => settings.buttons[0].label = v}
+                    onChange={v => updateField(["buttons", 0, "label"], v)}
                 />
                 <FormInput
                     title="First Button URL"
-                    value={settings.buttons[0].url}
+                    value={localSettings.buttons[0].url}
                     placeholder="https://discord.com/vanityurl/dotcom/steakpants/flour/flower/index11.html"
-                    disabled={!settings.buttons[0].label}
-                    onChange={v => settings.buttons[0].url = v}
+                    disabled={!localSettings.buttons[0].label}
+                    onChange={v => updateField(["buttons", 0, "url"], v)}
                 />
                 <FormInput
                     title="Second Button Text"
-                    value={settings.buttons[1].label}
+                    value={localSettings.buttons[1].label}
                     placeholder="random link #2"
-                    onChange={v => settings.buttons[1].label = v}
+                    onChange={v => updateField(["buttons", 1, "label"], v)}
                 />
                 <FormInput
                     title="Second Button URL"
-                    value={settings.buttons[1].url}
+                    value={localSettings.buttons[1].url}
                     placeholder="https://youtu.be/w0AOGeqOnFY"
-                    disabled={!settings.buttons[1].label}
-                    onChange={v => settings.buttons[1].url = v}
+                    disabled={!localSettings.buttons[1].label}
+                    onChange={v => updateField(["buttons", 1, "url"], v)}
                 />
             </FormSection>
         </ScrollView>
     );
-}
+                    }
