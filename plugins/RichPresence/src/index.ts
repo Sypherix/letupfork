@@ -93,6 +93,8 @@ async function sendRequest(activity: Activity | null): Promise<{ [K in keyof Act
     return activity;
 }
 
+export { sendRequest };
+
 export default new class RichPresence {
     onLoad() {
         logger.log("Sending RPC request");
