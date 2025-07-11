@@ -1,5 +1,6 @@
 {
     "name": "RichPresence",
+    "main": "src/index.js",
     "description": "Sets Discord Rich Presence for your profile.",
     "vendetta": {
         "icon": "games"
